@@ -119,6 +119,12 @@ jobs:
           cd terraform/envs/${ENVIRONMENT}
           terraform init -input=false -backend-config backend-${ENVIRONMENT}.hcl
 
+      - name: Prepare Terraform Variables
+        shell: bash
+        run: |
+          cd terraform/envs/${ENVIRONMENT}
+          cp terraform.tfvars.example terraform.tfvars
+
       - name: Terraform Validate
         shell: bash
         run: |
@@ -172,6 +178,12 @@ jobs:
         run: |
           cd terraform/envs/${ENVIRONMENT}
           terraform init -input=false -backend-config backend-${ENVIRONMENT}.hcl
+
+      - name: Prepare Terraform Variables
+        shell: bash
+        run: |
+          cd terraform/envs/${ENVIRONMENT}
+          cp terraform.tfvars.example terraform.tfvars
 
       - name: Terraform Apply Saved Plan
         shell: bash
