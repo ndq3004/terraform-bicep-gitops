@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'terraform/**'
-      - 'bicep/**'
+      # - 'bicep/**'
       - 'platform-selector/**'
       - '.github/workflows/iac-plan-apply.yml'
   workflow_dispatch:
@@ -15,7 +15,7 @@ on:
         type: choice
         options:
           - terraform
-          - bicep
+          # - bicep
         default: terraform
       environment:
         description: Target environment
@@ -70,23 +70,23 @@ jobs:
             cd - >/dev/null
           done
 
-  bicep-pr-check:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Bicep
-        shell: bash
-        run: |
-          az bicep install
-          az bicep version
-
-      - name: Bicep Build Validation
-        shell: bash
-        run: |
-          az bicep build --file bicep/main.bicep
+  # bicep-pr-check:
+  #   if: github.event_name == 'pull_request'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Bicep
+  #       shell: bash
+  #       run: |
+  #         az bicep install
+  #         az bicep version
+  #
+  #     - name: Bicep Build Validation
+  #       shell: bash
+  #       run: |
+  #         az bicep build --file bicep/main.bicep
 
   terraform-plan:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.platform == 'terraform'
@@ -178,65 +178,65 @@ jobs:
           cd terraform/envs/${ENVIRONMENT}
           terraform apply -input=false tfplan
 
-  bicep-what-if:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.platform == 'bicep'
-    runs-on: ubuntu-latest
-    env:
-      ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # bicep-what-if:
+  #   if: github.event_name == 'workflow_dispatch' && github.event.inputs.platform == 'bicep'
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Azure Login (OIDC)
+  #       uses: azure/login@v2
+  #       with:
+  #         client-id: ${{ secrets.AZURE_CLIENT_ID }}
+  #         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+  #         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #
+  #     - name: Setup Bicep
+  #       shell: bash
+  #       run: |
+  #         az bicep install
+  #         az bicep version
+  #
+  #     - name: Bicep What-If
+  #       shell: bash
+  #       run: |
+  #         az deployment sub what-if \
+  #           --name iac-${ENVIRONMENT}-whatif-${GITHUB_RUN_ID} \
+  #           --location westeurope \
+  #           --template-file bicep/main.bicep \
+  #           --parameters @bicep/parameters/${ENVIRONMENT}.parameters.json
 
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Setup Bicep
-        shell: bash
-        run: |
-          az bicep install
-          az bicep version
-
-      - name: Bicep What-If
-        shell: bash
-        run: |
-          az deployment sub what-if \
-            --name iac-${ENVIRONMENT}-whatif-${GITHUB_RUN_ID} \
-            --location westeurope \
-            --template-file bicep/main.bicep \
-            --parameters @bicep/parameters/${ENVIRONMENT}.parameters.json
-
-  bicep-apply:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.platform == 'bicep' && github.event.inputs.operation == 'apply'
-    needs: bicep-what-if
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    env:
-      ENVIRONMENT: ${{ github.event.inputs.environment }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Setup Bicep
-        shell: bash
-        run: |
-          az bicep install
-
-      - name: Bicep Apply
-        shell: bash
-        run: |
-          az deployment sub create \
-            --name iac-${ENVIRONMENT}-apply-${GITHUB_RUN_ID} \
-            --location westeurope \
-            --template-file bicep/main.bicep \
-            --parameters @bicep/parameters/${ENVIRONMENT}.parameters.json
+  # bicep-apply:
+  #   if: github.event_name == 'workflow_dispatch' && github.event.inputs.platform == 'bicep' && github.event.inputs.operation == 'apply'
+  #   needs: bicep-what-if
+  #   runs-on: ubuntu-latest
+  #   environment: ${{ github.event.inputs.environment }}
+  #   env:
+  #     ENVIRONMENT: ${{ github.event.inputs.environment }}
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Azure Login (OIDC)
+  #       uses: azure/login@v2
+  #       with:
+  #         client-id: ${{ secrets.AZURE_CLIENT_ID }}
+  #         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+  #         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #
+  #     - name: Setup Bicep
+  #       shell: bash
+  #       run: |
+  #         az bicep install
+  #
+  #     - name: Bicep Apply
+  #       shell: bash
+  #       run: |
+  #         az deployment sub create \
+  #           --name iac-${ENVIRONMENT}-apply-${GITHUB_RUN_ID} \
+  #           --location westeurope \
+  #           --template-file bicep/main.bicep \
+  #           --parameters @bicep/parameters/${ENVIRONMENT}.parameters.json
