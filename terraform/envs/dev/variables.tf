@@ -162,3 +162,18 @@ variable "sql_max_size_gb" {
   type    = number
   default = 32
 }
+
+variable "state_resource_group_name" {
+  type    = string
+  default = "rg-gitops-dev-state-weu"
+}
+
+variable "state_storage_account_name" {
+  type    = string
+  default = "stgitopsdevstateweu"
+}
+
+variable "state_container_name" {
+  type    = string
+  default = "tfstate"
+}

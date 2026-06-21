@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           cd terraform/envs/${ENVIRONMENT}
-          terraform init -input=false
+          terraform init -input=false -backend-config backend-${ENVIRONMENT}.hcl
 
       - name: Terraform Validate
         shell: bash
@@ -170,7 +170,7 @@ jobs:
         shell: bash
         run: |
           cd terraform/envs/${ENVIRONMENT}
-          terraform init -input=false
+          terraform init -input=false -backend-config backend-${ENVIRONMENT}.hcl
 
       - name: Terraform Apply Saved Plan
         shell: bash
