@@ -30,14 +30,14 @@ locals {
 }
 
 resource "azurerm_api_management_api" "backend" {
-  name                = var.api_name
-  resource_group_name = var.resource_group_name
-  api_management_name = azurerm_api_management.this.name
-  revision            = "1"
-  display_name        = var.api_display_name
-  path                = var.api_path
-  protocols           = ["https"]
-  service_url         = var.backend_url
+  name                  = var.api_name
+  resource_group_name   = var.resource_group_name
+  api_management_name   = azurerm_api_management.this.name
+  revision              = "1"
+  display_name          = var.api_display_name
+  path                  = var.api_path
+  protocols             = ["https"]
+  service_url           = var.backend_url
   subscription_required = var.api_subscription_required
 
   dynamic "import" {
