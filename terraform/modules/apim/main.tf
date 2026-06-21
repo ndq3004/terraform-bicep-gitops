@@ -23,6 +23,12 @@ resource "azurerm_api_management_backend" "aks" {
   url                 = var.backend_url
 }
 
+locals {
+  use_openapi_import         = var.api_openapi_spec_content != null && trimspace(var.api_openapi_spec_content) != ""
+  create_fallback_operations = !local.use_openapi_import && var.enable_fallback_operations
+  fallback_methods           = toset(["GET", "POST", "PUT", "DELETE", "PATCH"])
+}
+
 resource "azurerm_api_management_api" "backend" {
   name                = var.api_name
   resource_group_name = var.resource_group_name
@@ -32,4 +38,54 @@ resource "azurerm_api_management_api" "backend" {
   path                = var.api_path
   protocols           = ["https"]
   service_url         = var.backend_url
+  subscription_required = var.api_subscription_required
+
+  dynamic "import" {
+    for_each = local.use_openapi_import ? [1] : []
+    content {
+      content_format = var.api_openapi_spec_format
+      content_value  = var.api_openapi_spec_content
+    }
+  }
+}
+
+resource "azurerm_api_management_api_operation" "proxy" {
+  for_each = local.create_fallback_operations ? local.fallback_methods : toset([])
+
+  operation_id        = lower("proxy-${each.value}")
+  api_name            = azurerm_api_management_api.backend.name
+  api_management_name = azurerm_api_management.this.name
+  resource_group_name = var.resource_group_name
+  display_name        = "Proxy ${each.value}"
+  method              = each.value
+  url_template        = "/*"
+
+  response {
+    status_code = 200
+  }
+}
+
+resource "azurerm_api_management_api_policy" "backend_forwarding" {
+  api_name            = azurerm_api_management_api.backend.name
+  api_management_name = azurerm_api_management.this.name
+  resource_group_name = var.resource_group_name
+
+  xml_content = <<XML
+<policies>
+  <inbound>
+    <base />
+    <set-backend-service base-url="${var.backend_url}" />
+  </inbound>
+  <backend>
+    <base />
+    <forward-request />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>
+XML
 }

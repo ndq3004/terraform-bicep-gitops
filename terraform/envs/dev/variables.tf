@@ -118,9 +118,14 @@ variable "apim_virtual_network_type" {
   default = "External"
 }
 
-variable "aks_backend_url" {
+variable "aks_backend_private_ip" {
   type    = string
-  default = "http://aks-backend.internal"
+  default = "10.10.2.20"
+}
+
+variable "aks_backend_port" {
+  type    = number
+  default = 80
 }
 
 variable "aks_backend_protocol" {
