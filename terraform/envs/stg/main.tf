@@ -24,7 +24,8 @@ provider "azurerm" {
 data "azurerm_client_config" "current" {}
 
 locals {
-  name_prefix = "${var.project_name}-${var.environment}"
+  name_prefix     = "${var.project_name}-${var.environment}"
+  aks_backend_url = "${var.aks_backend_protocol}://${var.aks_backend_private_ip}${var.aks_backend_port == null ? "" : format(":%d", var.aks_backend_port)}"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -109,7 +110,7 @@ module "apim" {
   sku_name             = var.apim_sku_name
   virtual_network_type = var.apim_virtual_network_type
   subnet_id            = module.network.apim_subnet_id
-  backend_url          = var.aks_backend_url
+  backend_url          = local.aks_backend_url
   backend_protocol     = var.aks_backend_protocol
   api_name             = var.apim_api_name
   api_display_name     = var.apim_api_display_name

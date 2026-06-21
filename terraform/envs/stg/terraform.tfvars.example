@@ -11,4 +11,5 @@ aks_private_cluster_enabled  = true
 az_count                     = 2
 apim_publisher_name          = "Quan Nguyen"
 apim_publisher_email         = "quan@example.com"
-aks_backend_url              = "http://aks-backend.internal"
+aks_backend_private_ip       = "10.20.2.20"
+aks_backend_port             = 80

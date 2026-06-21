@@ -55,3 +55,23 @@ variable "api_path" {
   type    = string
   default = "api"
 }
+
+variable "api_subscription_required" {
+  type    = bool
+  default = false
+}
+
+variable "enable_fallback_operations" {
+  type    = bool
+  default = true
+}
+
+variable "api_openapi_spec_format" {
+  type    = string
+  default = "openapi+json"
+}
+
+variable "api_openapi_spec_content" {
+  type    = string
+  default = null
+}
