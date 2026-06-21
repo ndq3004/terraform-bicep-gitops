@@ -1,0 +1,14 @@
+project_name                 = "gitops"
+environment                  = "stg"
+location                     = "westeurope"
+resource_group_name          = "rg-gitops-stg-weu"
+vnet_address_space           = "10.20.0.0/16"
+apim_subnet_cidr             = "10.20.1.0/24"
+aks_subnet_cidr              = "10.20.2.0/23"
+private_endpoint_subnet_cidr = "10.20.4.0/24"
+acr_sku                      = "Standard"
+aks_private_cluster_enabled  = true
+az_count                     = 2
+apim_publisher_name          = "Quan Nguyen"
+apim_publisher_email         = "quan@example.com"
+aks_backend_url              = "http://aks-backend.internal"
