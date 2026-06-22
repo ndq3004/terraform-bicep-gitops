@@ -115,6 +115,7 @@ module "apim" {
   api_name             = var.apim_api_name
   api_display_name     = var.apim_api_display_name
   api_path             = var.apim_api_path
+  nsg_name             = replace("apim-nsg-${local.name_prefix}", "_", "-")
 }
 
 module "sql" {

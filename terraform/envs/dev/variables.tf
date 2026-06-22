@@ -10,7 +10,7 @@ variable "environment" {
 
 variable "location" {
   type    = string
-  default = "westeurope"
+  default = "westus2"
 }
 
 variable "resource_group_name" {
@@ -65,7 +65,7 @@ variable "system_node_count" {
 
 variable "system_node_vm_size" {
   type    = string
-  default = "Standard_DS2_v2"
+  default = "Standard_F2als_v6"
 }
 
 variable "system_min_count" {

@@ -1,3 +1,70 @@
+resource "azurerm_network_security_group" "this" {
+  name                = coalesce(var.nsg_name, replace("nsg-${var.apim_name}", "_", "-"))
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_network_security_rule" "apim_management_inbound" {
+  name                        = "Allow-Apim-ControlPlane-3443"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "3443"
+  source_address_prefix       = "ApiManagement"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.this.name
+}
+
+resource "azurerm_network_security_rule" "apim_gateway_https_inbound" {
+  name                        = "Allow-Internet-HTTPS-443"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "Internet"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.this.name
+}
+
+resource "azurerm_network_security_rule" "apim_gateway_http_inbound" {
+  name                        = "Allow-Internet-HTTP-80"
+  priority                    = 120
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "80"
+  source_address_prefix       = "Internet"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.this.name
+}
+
+resource "azurerm_network_security_rule" "apim_lb_health_probe_inbound" {
+  name                        = "Allow-AzureLoadBalancer-6390"
+  priority                    = 130
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "6390"
+  source_address_prefix       = "AzureLoadBalancer"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.this.name
+}
+
+resource "azurerm_subnet_network_security_group_association" "apim" {
+  subnet_id                 = var.subnet_id
+  network_security_group_id = azurerm_network_security_group.this.id
+}
+
 resource "azurerm_api_management" "this" {
   name                 = var.apim_name
   location             = var.location
@@ -13,6 +80,8 @@ resource "azurerm_api_management" "this" {
   virtual_network_configuration {
     subnet_id = var.subnet_id
   }
+
+  depends_on = [azurerm_subnet_network_security_group_association.apim]
 }
 
 resource "azurerm_api_management_backend" "aks" {
@@ -65,27 +134,27 @@ resource "azurerm_api_management_api_operation" "proxy" {
   }
 }
 
-resource "azurerm_api_management_api_policy" "backend_forwarding" {
-  api_name            = azurerm_api_management_api.backend.name
-  api_management_name = azurerm_api_management.this.name
-  resource_group_name = var.resource_group_name
-
-  xml_content = <<XML
-<policies>
-  <inbound>
-    <base />
-    <set-backend-service base-url="${var.backend_url}" />
-  </inbound>
-  <backend>
-    <base />
-    <forward-request />
-  </backend>
-  <outbound>
-    <base />
-  </outbound>
-  <on-error>
-    <base />
-  </on-error>
-</policies>
-XML
-}
+# resource "azurerm_api_management_api_policy" "backend_forwarding" {
+#   api_name            = azurerm_api_management_api.backend.name
+#   api_management_name = azurerm_api_management.this.name
+#   resource_group_name = var.resource_group_name
+#
+#   xml_content = <<XML
+# <policies>
+#   <inbound>
+#     <base />
+#     <set-backend-service base-url="${var.backend_url}" />
+#   </inbound>
+#   <backend>
+#     <base />
+#     <forward-request />
+#   </backend>
+#   <outbound>
+#     <base />
+#   </outbound>
+#   <on-error>
+#     <base />
+#   </on-error>
+# </policies>
+# XML
+# }

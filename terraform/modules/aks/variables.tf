@@ -40,7 +40,7 @@ variable "system_node_count" {
 
 variable "system_node_vm_size" {
   type    = string
-  default = "Standard_DS2_v2"
+  default = "Standard_B2s_v2"
 }
 
 variable "system_min_count" {

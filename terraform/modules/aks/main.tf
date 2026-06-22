@@ -17,7 +17,6 @@ resource "azurerm_kubernetes_cluster" "this" {
 
   default_node_pool {
     name                = "system"
-    node_count          = var.system_node_count
     vm_size             = var.system_node_vm_size
     vnet_subnet_id      = var.subnet_id
     zones               = local.zones
@@ -28,6 +27,11 @@ resource "azurerm_kubernetes_cluster" "this" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+  azure_active_directory_role_based_access_control {
+    managed            = true
+    azure_rbac_enabled = true
   }
 
   network_profile {

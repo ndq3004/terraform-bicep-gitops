@@ -18,7 +18,11 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 data "azurerm_client_config" "current" {}
@@ -31,7 +35,6 @@ locals {
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name
   location = var.location
-
   tags = {
     project     = var.project_name
     environment = var.environment
@@ -41,6 +44,12 @@ resource "azurerm_resource_group" "this" {
 resource "random_password" "sql_admin" {
   length  = 24
   special = true
+}
+
+resource "random_string" "kv_suffix" {
+  length  = 4
+  special = false
+  upper   = false
 }
 
 module "network" {
@@ -68,7 +77,7 @@ module "acr" {
 
   resource_group_name = azurerm_resource_group.this.name
   location            = var.location
-  acr_name            = replace("acr${local.name_prefix}", "-", "")
+  acr_name            = replace("ndquanacr${local.name_prefix}", "-", "")
   sku                 = var.acr_sku
 }
 
@@ -78,7 +87,7 @@ module "keyvault" {
   resource_group_name = azurerm_resource_group.this.name
   location            = var.location
   tenant_id           = data.azurerm_client_config.current.tenant_id
-  key_vault_name      = replace("kv-${local.name_prefix}", "_", "-")
+  key_vault_name      = replace("kv-${local.name_prefix}-${random_string.kv_suffix.result}", "_", "-")
 }
 
 module "aks" {
@@ -104,6 +113,12 @@ module "aks" {
   api_server_authorized_ip_ranges = var.api_server_authorized_ip_ranges
 }
 
+resource "azurerm_role_assignment" "current_user_aks_admin" {
+  scope                = module.aks.id
+  role_definition_name = "Azure Kubernetes Service RBAC Cluster Admin"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 module "apim" {
   source = "../../modules/apim"
 
@@ -120,28 +135,38 @@ module "apim" {
   api_name             = var.apim_api_name
   api_display_name     = var.apim_api_display_name
   api_path             = var.apim_api_path
+  nsg_name             = replace("apim-nsg-${local.name_prefix}", "_", "-")
+  depends_on           = [module.aks]
 }
 
-module "sql" {
-  source = "../../modules/sql"
+# module "sql" {
+#   source = "../../modules/sql"
+#
+#   resource_group_name          = azurerm_resource_group.this.name
+#   location                     = var.location
+#   server_name                  = replace("sql-${local.name_prefix}", "_", "-")
+#   database_name                = var.sql_database_name
+#   administrator_login          = var.sql_admin_login
+#   administrator_login_password = random_password.sql_admin.result
+#   database_sku_name            = var.sql_database_sku_name
+#   zone_redundant               = var.az_count > 1 ? true : false
+#   max_size_gb                  = var.sql_max_size_gb
+#   private_endpoint_subnet_id   = module.network.private_endpoint_subnet_id
+#   vnet_id                      = module.network.vnet_id
+# }
 
-  resource_group_name          = azurerm_resource_group.this.name
-  location                     = var.location
-  server_name                  = replace("sql-${local.name_prefix}", "_", "-")
-  database_name                = var.sql_database_name
-  administrator_login          = var.sql_admin_login
-  administrator_login_password = random_password.sql_admin.result
-  database_sku_name            = var.sql_database_sku_name
-  zone_redundant               = var.az_count > 1 ? true : false
-  max_size_gb                  = var.sql_max_size_gb
-  private_endpoint_subnet_id   = module.network.private_endpoint_subnet_id
-  vnet_id                      = module.network.vnet_id
+resource "azurerm_role_assignment" "current_user_keyvault_admin" {
+  scope                = module.keyvault.id
+  role_definition_name = "Key Vault Administrator"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_secret" "sql_admin_password" {
   name         = "sql-admin-password"
   value        = random_password.sql_admin.result
   key_vault_id = module.keyvault.id
+
+  depends_on = [azurerm_role_assignment.current_user_keyvault_admin]
 }
 
 resource "azurerm_role_assignment" "aks_keyvault_secrets_user" {
@@ -176,9 +201,9 @@ output "acr_login_server" {
   value = module.acr.login_server
 }
 
-output "sql_server_name" {
-  value = module.sql.server_name
-}
+# output "sql_server_name" {
+#   value = module.sql.server_name
+# }
 
 output "key_vault_uri" {
   value = module.keyvault.vault_uri

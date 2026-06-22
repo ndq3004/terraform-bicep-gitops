@@ -10,6 +10,11 @@ variable "apim_name" {
   type = string
 }
 
+variable "nsg_name" {
+  type    = string
+  default = null
+}
+
 variable "publisher_name" {
   type = string
 }
